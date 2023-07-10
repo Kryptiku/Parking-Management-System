@@ -2,6 +2,9 @@
 #include <iostream>
 #include <map>
 #include <limits>
+#include <fstream>
+#include <sstream>
+#include <string>
 
 using namespace std;
 
@@ -27,7 +30,9 @@ private:
     map<string, Vehicle*> parking;
     map<string, int> spaces = { {"Car", 50}, {"Truck", 30}, {"Motor/Bike", 10} };
     map<string, double> fees = { {"Car", 5.0}, {"Truck", 7.0}, {"Motor/Bike", 3.0} };
+    void readDataFromCSV();
 public:
+    string csvFileName;
     // Main Menu
     int menu() {
         int choice;
@@ -40,7 +45,7 @@ public:
         cin >> choice;
         cin.ignore();
         return choice;
-    }
+    };
 
     // Add Vehicle
     void addVehicle() {
@@ -74,6 +79,17 @@ public:
         spaces[vehicleType]--;
 
         cout << "\n[INFO] " << vehicleType << " " << plateNumber << " added successfully.\n";
+
+        ofstream outputFile(csvFileName, ios::app);
+        if(outputFile.is_open()) {
+            outputFile << "Plate Number" << "," << "Vehicle Type" << "," << "Fee Per Hour" << "\n";
+            outputFile << plateNumber << "," << vehicleType << "," << feePerHour << "\n";
+            outputFile.close();
+        }
+        else {
+            cout << "[ERROR] Failed to open the CSV file for writing. \n";
+            return;
+        }
     }
 
     // Remove Vehicle
@@ -100,6 +116,17 @@ public:
         } else {
             cout << "\n[ERROR] Vehicle " << plateNumber << " not found.\n";
         }
+
+        ofstream outputFile(csvFileName);
+        if(outputFile.is_open()) {
+            for(const auto& vehicle:parking) {
+                outputFile << vehicle.first << "," << vehicle.second->getVehicleType() << "," << vehicle.second->getFeePerHour() << "\n";
+            }
+            outputFile.close();
+        }
+        else {
+            cout << "[ERROR] Failed to open the CSV file for writing.\n";
+        }
     }
 
     // Check Vehicle
@@ -120,11 +147,34 @@ public:
         for (auto const& vehicle : parking)
             cout << "Plate Number: " << vehicle.first << ", Vehicle Type: " << vehicle.second->getVehicleType() << "\n";
     }
+
+
 };
+
+    void ParkingLot::readDataFromCSV() {
+        ifstream inputFile(csvFileName);
+
+        if(!inputFile.is_open()) {
+            cout << "[ERROR] Failed to open the CSV file.\n";
+            return;
+        }
+
+        string line;
+        while(getline(inputFile, line)) {
+            istringstream iss(line);
+            string plateNumber, vehicleType;
+            double feePerHour;
+            if(getline(iss, plateNumber, ',') && getline(iss, vehicleType, ',') && iss >> feePerHour) {
+                parking[plateNumber] = new Vehicle(plateNumber, vehicleType, feePerHour);
+            }
+        }
+        inputFile.close();
+    }
 
 // Driver Code
 int main() {
     ParkingLot parkingLot;
+    parkingLot.csvFileName = "parking_data.csv";
     while (true) {
         int choice = parkingLot.menu();
 
