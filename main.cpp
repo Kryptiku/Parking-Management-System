@@ -7,7 +7,6 @@
 #include <string>
 
 using namespace std;
-
 class Vehicle {
 private:
     string plateNumber;
@@ -33,6 +32,9 @@ private:
     void readDataFromCSV();
 public:
     string csvFileName;
+    ParkingLot(string fileName) : csvFileName(fileName) {
+        readDataFromCSV();
+    }    
     // Main Menu
     int menu() {
         int choice;
@@ -173,7 +175,7 @@ public:
 
 // Driver Code
 int main() {
-    ParkingLot parkingLot;
+    ParkingLot parkingLot("parking_lot_database.csv");
     parkingLot.csvFileName = "parking_lot_database.csv";
     while (true) {
         int choice = parkingLot.menu();
