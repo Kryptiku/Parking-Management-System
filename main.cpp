@@ -1,55 +1,154 @@
-#include <ctime>
 #include <iostream>
-#include <map>
-#include <limits>
+#include <string>
 #include <fstream>
 #include <sstream>
-#include <string>
+#include <map>
+#include <algorithm>
+#include <ctime>
 
 using namespace std;
-class Vehicle {
-private:
+
+class Node {
+public:
     string plateNumber;
     string vehicleType;
-    time_t entryTime;
     double feePerHour;
-public:
-    Vehicle(string plateNumber, string vehicleType, double feePerHour)
-        : plateNumber(plateNumber), vehicleType(vehicleType), feePerHour(feePerHour) {
+    time_t entryTime;
+    Node* next;
+
+    Node(string plateNumber, string vehicleType, double feePerHour)
+        : plateNumber(plateNumber), vehicleType(vehicleType), feePerHour(feePerHour), next(nullptr) {
         this->entryTime = time(0);
     }
-    string getPlateNumber() { return this->plateNumber; }
-    string getVehicleType() { return this->vehicleType; }
-    time_t getEntryTime() { return this->entryTime; }
-    double getFeePerHour() { return this->feePerHour; }
+};
+
+class LinkedList {
+public:
+    Node* head;
+
+    LinkedList() : head(nullptr) {}
+
+    void insertAtTail(Node* newNode) {
+        if (head == nullptr) {
+            head = newNode;
+            return;
+        }
+
+        Node* temp = head;
+        while (temp->next != nullptr) {
+            temp = temp->next;
+        }
+        temp->next = newNode;
+    }
+
+    Node* searchByPlateNumber(string plateNumber) {
+        Node* temp = head;
+        while (temp != nullptr) {
+            if (temp->plateNumber == plateNumber) {
+                return temp;
+            }
+            temp = temp->next;
+        }
+        return nullptr;
+    }
+
+    void removeByPlateNumber(string plateNumber) {
+        if (head == nullptr) {
+            return;
+        }
+
+        if (head->plateNumber == plateNumber) {
+            Node* temp = head;
+            head = head->next;
+            delete temp;
+            return;
+        }
+
+        Node* temp = head;
+        while (temp->next != nullptr) {
+            if (temp->next->plateNumber == plateNumber) {
+                Node* toDelete = temp->next;
+                temp->next = temp->next->next;
+                delete toDelete;
+                return;
+            }
+            temp = temp->next;
+        }
+    }
 };
 
 class ParkingLot {
 private:
-    map<string, Vehicle*> parking;
-    map<string, int> spaces = { {"Car", 50}, {"Truck", 30}, {"Motor/Bike", 10} };
-    map<string, double> fees = { {"Car", 5.0}, {"Truck", 7.0}, {"Motor/Bike", 3.0} };
-    void readDataFromCSV();
-public:
+    LinkedList parkingLot;
+    map<string, int> spaces = { {"car", 50}, {"truck", 30}, {"motor", 20} };
+    map<string, double> fees = { {"car", 5.0}, {"truck", 10.0}, {"motor", 3.0} };
     string csvFileName;
+
+    void readDataFromCSV() {
+        ifstream inputFile(csvFileName);
+
+        if(!inputFile.is_open()) {
+            cerr << "[ERROR] Failed to open the CSV file.\n";
+            return;
+        }
+
+        string line;
+        getline(inputFile, line);
+        while(getline(inputFile, line)) {
+            istringstream iss(line);
+            string plateNumber, vehicleType;
+            double feePerHour;
+            if(getline(iss, plateNumber, ',') && getline(iss, vehicleType, ',') && iss >> feePerHour) {
+                parkingLot.insertAtTail(new Node(plateNumber, vehicleType, feePerHour));
+            }
+        }
+
+        inputFile.close();
+    }
+
+    void readSpacesFromCSV() {
+        ifstream inputFile("spaces.csv");
+
+        if(!inputFile.is_open()) {
+            cerr << "[ERROR] Failed to open the spaces CSV file.\n";
+            return;
+        }
+
+        string line;
+        getline(inputFile, line);
+        while(getline(inputFile, line)) {
+            istringstream iss(line);
+            string vehicleType;
+            int space;
+            if(getline(iss, vehicleType, ',') && iss >> space) {
+                spaces[vehicleType] = space;
+            }
+        }
+
+        inputFile.close();
+    }
+
+    void writeSpacesToCSV() {
+        ofstream outputFile("spaces.csv");
+
+        if (!outputFile.is_open()) {
+            cerr << "[ERROR] Failed to open the spaces CSV file for writing.\n";
+            return;
+        }
+
+        outputFile << "VehicleType,AvailableSpaces\n";
+        for (auto const& space : spaces)
+            outputFile << space.first << "," << space.second << "\n";
+
+        outputFile.close();
+    }
+
+public:
     ParkingLot(string fileName) : csvFileName(fileName) {
         readDataFromCSV();
-    }    
-    // Main Menu
-    int menu() {
-        int choice;
-        cout << "\n[PARKING MANAGEMENT SYSTEM MENU]\n";
-        cout << "1. Add Vehicle\n";
-        cout << "2. Check Vehicle\n";
-        cout << "3. Remove Vehicle\n";
-        cout << "4. Exit Program\n";
-        cout << "Please enter your choice: ";
-        cin >> choice;
-        cin.ignore();
-        return choice;
-    };
+        readSpacesFromCSV();
+    }
 
-    // Add Vehicle
     void addVehicle() {
         string plateNumber;
         string vehicleType;
@@ -59,17 +158,22 @@ public:
         for (auto const& space : spaces)
             cout << space.first << ": " << space.second << "\n";
 
-        cout << "Enter vehicle type (Car, Truck, Motor/Bike): ";
-        getline(cin, vehicleType);
+        while (true) {
+            cout << endl <<"[Car | Truck | Motor]" << endl << "Enter vehicle name: ";
+            getline(cin, vehicleType);
 
-        if (spaces.find(vehicleType) == spaces.end()) {
-            cout << "\n[ERROR] Invalid vehicle type.\n";
-            return;
-        }
+            transform(vehicleType.begin(), vehicleType.end(), vehicleType.begin(), ::tolower);
 
-        if (spaces[vehicleType] <= 0) {
-            cout << "\n[INFO] No available space for " << vehicleType << ".\n";
-            return;
+            if (spaces.find(vehicleType) == spaces.end()) {
+                cout << "\n[ERROR] Invalid vehicle type. Please try again.\n";
+                continue;
+            }
+
+            if (spaces[vehicleType] <= 0) {
+                cout << "\n[INFO] No available space for " << vehicleType << ". Please choose another vehicle type.\n";
+                continue;
+            }
+            break;
         }
 
         feePerHour = fees[vehicleType];
@@ -77,133 +181,145 @@ public:
         cout << "Enter plate number: ";
         getline(cin, plateNumber);
 
-        parking.insert(pair<string, Vehicle*>(plateNumber, new Vehicle(plateNumber, vehicleType, feePerHour)));
+        parkingLot.insertAtTail(new Node(plateNumber, vehicleType, feePerHour));
         spaces[vehicleType]--;
 
+        writeSpacesToCSV();
+
         cout << "\n[INFO] " << vehicleType << " " << plateNumber << " added successfully.\n";
+        cout << "\n[INFO] The fee per hour is $" << feePerHour << "\n";
 
         ofstream outputFile(csvFileName, ios::app);
         if(outputFile.is_open()) {
-            outputFile << "Plate Number" << "," << "Vehicle Type" << "," << "Fee Per Hour" << "\n";
             outputFile << plateNumber << "," << vehicleType << "," << feePerHour << "\n";
             outputFile.close();
         }
         else {
-            cout << "[ERROR] Failed to open the CSV file for writing. \n";
+            cerr << "[ERROR] Failed to open the CSV file for writing. \n";
             return;
         }
     }
 
-    // Remove Vehicle
-    void removeVehicle() {
-        string plateNumber;
-        cout << "Enter the plate number: ";
-        getline(cin, plateNumber);
-        auto vehicle = parking.find(plateNumber);
-
-        if (vehicle != parking.end()) {
-            time_t exitTime = time(0);
-            time_t entryTime = vehicle->second->getEntryTime();
-            double totalFee = difftime(exitTime, entryTime) / 3600 * vehicle->second->getFeePerHour();
-
-            cout << "\n[RECEIPT]\n";
-            cout << "Plate Number: " << vehicle->second->getPlateNumber() << "\n";
-            cout << "Vehicle Type: " << vehicle->second->getVehicleType() << "\n";
-            cout << "Time In: " << ctime(&entryTime);
-            cout << "Time Out: " << ctime(&exitTime);
-            cout << "Total Fee: $" << totalFee << "\n";
-
-            delete vehicle->second;
-            parking.erase(vehicle);
-        } else {
-            cout << "\n[ERROR] Vehicle " << plateNumber << " not found.\n";
-        }
-
-        ofstream outputFile(csvFileName);
-        if(outputFile.is_open()) {
-            for(const auto& vehicle:parking) {
-                outputFile << vehicle.first << "," << vehicle.second->getVehicleType() << "," << vehicle.second->getFeePerHour() << "\n";
-            }
-            outputFile.close();
-        }
-        else {
-            cout << "[ERROR] Failed to open the CSV file for writing.\n";
-        }
-    }
-
-    // Check Vehicle
     void checkVehicle() {
         string plateNumber;
-        cout << "Enter the plate number: ";
+        cout << "Enter the plate number of the vehicle: ";
         getline(cin, plateNumber);
-        auto vehicle = parking.find(plateNumber);
-        if (vehicle != parking.end()) {
-            cout << "\n[INFO] Vehicle " << vehicle->second->getPlateNumber() << " is present.\n";
-        } else {
-            cout << "\n[ERROR] Vehicle " << plateNumber << " not found.\n";
+        Node* vehicleNode = parkingLot.searchByPlateNumber(plateNumber);
+        if (vehicleNode == nullptr) {
+            cout << "[INFO] Vehicle not found in the parking lot.\n";
+            return;
         }
+
+        time_t currentTime = time(0);
+        double hoursParked = difftime(currentTime, vehicleNode->entryTime) / 3600.0;
+        double cost = hoursParked * vehicleNode->feePerHour;
+
+        cout << "[INFO] Vehicle has been parked for " << hoursParked << " hours.\n";
+        cout << "[INFO] Total cost is $" << cost << "\n";
     }
 
-    // Print all Vehicles
-    void printAllVehicles() {
-        for (auto const& vehicle : parking)
-            cout << "Plate Number: " << vehicle.first << ", Vehicle Type: " << vehicle.second->getVehicleType() << "\n";
-    }
+    void removeVehicle() {
+        string plateNumber;
+        cout << "Enter the plate number of the vehicle: ";
+        getline(cin, plateNumber);
+        Node* vehicleNode = parkingLot.searchByPlateNumber(plateNumber);
+        if (vehicleNode == nullptr) {
+            cout << "[INFO] Vehicle not found in the parking lot.\n";
+            return;
+        }
 
+        time_t currentTime = time(0);
+        double hoursParked = difftime(currentTime, vehicleNode->entryTime) / 3600.0;
+        double cost = hoursParked * vehicleNode->feePerHour;
 
-};
+        parkingLot.removeByPlateNumber(plateNumber);
+        spaces[vehicleNode->vehicleType]++;
 
-    void ParkingLot::readDataFromCSV() {
+        writeSpacesToCSV();
+
+        cout << "[INFO] " << vehicleNode->vehicleType << " " << plateNumber << " removed successfully.\n";
+        cout << "[INFO] Vehicle has been parked for " << hoursParked << " hours.\n";
+        cout << "[INFO] Total cost is $" << cost << "\n";
+
+        delete vehicleNode;
+
+        string tempFileName = "temp.csv";
         ifstream inputFile(csvFileName);
+        ofstream outputFile(tempFileName);
 
-        if(!inputFile.is_open()) {
-            cout << "[ERROR] Failed to open the CSV file.\n";
+        if(!inputFile.is_open() || !outputFile.is_open()) {
+            cerr << "[ERROR] Failed to open the CSV file.\n";
             return;
         }
 
         string line;
         while(getline(inputFile, line)) {
-            istringstream iss(line);
-            string plateNumber, vehicleType;
-            double feePerHour;
-            if(getline(iss, plateNumber, ',') && getline(iss, vehicleType, ',') && iss >> feePerHour) {
-                parking[plateNumber] = new Vehicle(plateNumber, vehicleType, feePerHour);
+            if(line.find(plateNumber) == string::npos) {
+                outputFile << line << "\n";
             }
         }
+
         inputFile.close();
+        outputFile.close();
+
+        // Handle possible file operation errors
+        if(remove(csvFileName.c_str()) != 0) {
+            perror("[ERROR] Error deleting original CSV file");
+            return;
+        }
+        if(rename(tempFileName.c_str(), csvFileName.c_str()) != 0) {
+            perror("[ERROR] Error renaming temporary CSV file");
+        }
     }
 
-// Driver Code
-int main() {
-    ParkingLot parkingLot("parking_lot_database.csv");
-    parkingLot.csvFileName = "parking_lot_database.csv";
-    while (true) {
-        int choice = parkingLot.menu();
 
-        switch (choice) {
-            case 1: {
+};
+
+int main() {
+    ParkingLot parkingLot("parkingLot.csv");
+
+    int option;
+    while (true) {
+        cout << "\n*** Parking Lot Management System ***\n";
+        cout << "1. Add vehicle\n";
+        cout << "2. Check vehicle\n";
+        cout << "3. Remove vehicle\n";
+        cout << "4. Exit\n";
+        cout << "Please enter your option: ";
+
+        if(!(cin >> option)) {
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            cout << "[ERROR] Invalid option. Please enter a number.\n";
+            continue;
+        }
+
+        cin.ignore();
+
+        switch (option) {
+            case 1:
                 system("CLS");
                 parkingLot.addVehicle();
                 break;
-            }
-            case 2: {
+            case 2:
                 system("CLS");
-                parkingLot.printAllVehicles();
                 parkingLot.checkVehicle();
                 break;
-            }
-            case 3: {
+            case 3:
                 system("CLS");
                 parkingLot.removeVehicle();
                 break;
-            }
-            case 4: {
-                cout << "Exiting the program...\n";
+            case 4:
+                cout << "Exiting...\n";
                 return 0;
-            }
             default:
-                cout << "[ERROR] Invalid option. Please enter a number from 1 to 4.\n";
-                break;
+                cout << "[ERROR] Invalid option. Please try again.\n";
         }
     }
+    return 0;
 }
+
+
+
+
+
