@@ -1,10 +1,12 @@
 #include <ctime>
+#include <conio.h>
 #include <iostream>
 #include <map>
 #include <limits>
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <vector>
 
 using namespace std;
 class Vehicle {
@@ -34,7 +36,59 @@ public:
     string csvFileName;
     ParkingLot(string fileName) : csvFileName(fileName) {
         readDataFromCSV();
-    }    
+    }
+
+    // Counter
+    int countCars() {
+        int carCount = 0;
+    
+        for(const auto& vehicle : parking) {
+            if(vehicle.second->getVehicleType() == "Car") {
+                carCount++;
+            }
+        }
+        return carCount;
+    }
+
+    int countTrucks() {
+        int truckCount = 0;
+
+        for(const auto& vehicle : parking) {
+            if(vehicle.second->getVehicleType() == "Truck") {
+                truckCount++;
+            }
+        }
+        return truckCount;
+    }
+
+    int countBikes() {
+        int bikeCount = 0;
+
+        for(const auto& vehicle : parking) {
+            if(vehicle.second->getVehicleType() == "Motor/Bike") {
+                bikeCount++;
+            }
+        }
+        return bikeCount;
+    }
+
+    //Availability of Slots
+    int countAvailableSlots(const string& vehicleType) {
+        if(spaces.find(vehicleType) == spaces.end()) {
+            return -1; //In case the vehicle type is not valid
+        }
+
+        int totalSlots = spaces[vehicleType];
+        int occupiedSlots = 0;
+
+        for(const auto& vehicle : parking) {
+            if(vehicle.second->getVehicleType() == vehicleType) {
+                occupiedSlots++;
+            }
+        }
+        return totalSlots - occupiedSlots;
+    }
+
     // Main Menu
     int menu() {
         int choice;
@@ -52,15 +106,57 @@ public:
     // Add Vehicle
     void addVehicle() {
         string plateNumber;
+        string optionChoice;
+        int loopInput;
         string vehicleType;
         double feePerHour;
 
-        cout << "Available parking spaces:\n";
-        for (auto const& space : spaces)
-            cout << space.first << ": " << space.second << "\n";
+        do {
+            system("cls");
+            loopInput = 0;
+            cout << "Available parking spaces:\n";
+            ParkingLot parkingLot("parking_lot_database.csv");
 
-        cout << "Enter vehicle type (Car, Truck, Motor/Bike): ";
-        getline(cin, vehicleType);
+            int availableCarSlots = parkingLot.countAvailableSlots("Car");
+            cout << "Car: " << availableCarSlots << endl;
+
+            int availableTruckSlots = parkingLot.countAvailableSlots("Truck");
+            cout << "Truck: " << availableTruckSlots << endl;
+            
+            int availableBikeSlots = parkingLot.countAvailableSlots("Motor/Bike");
+            cout << "Motor/Bike: " << availableBikeSlots << endl;
+            
+            cout << "Enter vehicle type\n";
+            cout << "[1] Car\n";
+            cout << "[2] Truck\n";
+            cout << "[3] Motor/Bike\n";
+            cout << "Please enter your choice: ";
+            cin >> optionChoice;
+            cin.ignore();
+            
+            if(optionChoice == "1") {
+                vehicleType = "Car";
+                loopInput = 1;
+            }
+
+            else if(optionChoice == "2") {
+                vehicleType = "Truck";
+                loopInput = 1;
+            }
+
+            else if(optionChoice == "3") {
+                vehicleType = "Motor/Bike";
+                loopInput = 1; 
+            }
+
+            else {
+                cout << "[ERROR] Invalid vehicle type.\n";
+                cout << "Please try again.";
+                cout << "Press any key to continue...";
+                getch();
+            }
+        }
+        while(loopInput == 0);
 
         if (spaces.find(vehicleType) == spaces.end()) {
             cout << "\n[ERROR] Invalid vehicle type.\n";
@@ -71,14 +167,13 @@ public:
             cout << "\n[INFO] No available space for " << vehicleType << ".\n";
             return;
         }
-
+        
         feePerHour = fees[vehicleType];
 
         cout << "Enter plate number: ";
         getline(cin, plateNumber);
 
         parking.insert(pair<string, Vehicle*>(plateNumber, new Vehicle(plateNumber, vehicleType, feePerHour)));
-        spaces[vehicleType]--;
 
         cout << "\n[INFO] " << vehicleType << " " << plateNumber << " added successfully.\n";
 
@@ -152,7 +247,7 @@ public:
 
 
 };
-
+    //Readin Data in Database
     void ParkingLot::readDataFromCSV() {
         ifstream inputFile(csvFileName);
 
@@ -175,25 +270,26 @@ public:
 
 // Driver Code
 int main() {
+
     ParkingLot parkingLot("parking_lot_database.csv");
     parkingLot.csvFileName = "parking_lot_database.csv";
-    while (true) {
-        int choice = parkingLot.menu();
 
+    while(true) {
+        int choice = parkingLot.menu();
         switch (choice) {
             case 1: {
-                system("CLS");
+                system("cls");
                 parkingLot.addVehicle();
                 break;
             }
             case 2: {
-                system("CLS");
+                system("cls");
                 parkingLot.printAllVehicles();
                 parkingLot.checkVehicle();
                 break;
             }
             case 3: {
-                system("CLS");
+                system("cls");
                 parkingLot.removeVehicle();
                 break;
             }
