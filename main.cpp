@@ -65,9 +65,10 @@ public:
         }
 
         Node* temp = head;
+        Node* toDelete = nullptr;
         while (temp->next != nullptr) {
             if (temp->next->plateNumber == plateNumber) {
-                Node* toDelete = temp->next;
+                toDelete = temp->next;
                 temp->next = temp->next->next;
                 delete toDelete;
                 return;
@@ -75,13 +76,14 @@ public:
             temp = temp->next;
         }
     }
+
 };
 
 class ParkingLot {
 private:
     LinkedList parkingLot;
     map<string, int> spaces = { {"car", 50}, {"truck", 30}, {"motor", 20} };
-    map<string, double> fees = { {"car", 5.0}, {"truck", 10.0}, {"motor", 3.0} };
+    map<string, double> fees = { {"car", 50.0}, {"truck", 100.0}, {"motor", 30.0} };
     string csvFileName;
 
     void readDataFromCSV() {
@@ -159,7 +161,7 @@ public:
             cout << space.first << ": " << space.second << "\n";
 
         while (true) {
-            cout << endl <<"[Car | Truck | Motor]" << endl << "Enter vehicle name: ";
+            cout << endl <<"[Motor = 30php/hr ]\n[Car = 50php/hr]\n[Truck = 100php/hr]\n" << endl << "Enter vehicle type: ";
             getline(cin, vehicleType);
 
             transform(vehicleType.begin(), vehicleType.end(), vehicleType.begin(), ::tolower);
@@ -187,7 +189,7 @@ public:
         writeSpacesToCSV();
 
         cout << "\n[INFO] " << vehicleType << " " << plateNumber << " added successfully.\n";
-        cout << "\n[INFO] The fee per hour is $" << feePerHour << "\n";
+        cout << "\n[INFO] The fee per hour is PHP" << feePerHour << "\n";
 
         ofstream outputFile(csvFileName, ios::app);
         if(outputFile.is_open()) {
@@ -218,62 +220,70 @@ public:
         cout << "[INFO] Total cost is $" << cost << "\n";
     }
 
-    void removeVehicle() {
-        string plateNumber;
-        cout << "Enter the plate number of the vehicle: ";
-        getline(cin, plateNumber);
-        Node* vehicleNode = parkingLot.searchByPlateNumber(plateNumber);
-        if (vehicleNode == nullptr) {
-            cout << "[INFO] Vehicle not found in the parking lot.\n";
-            return;
-        }
+void removeVehicle() {
+    string plateNumber;
+    cout << "Enter the plate number of the vehicle: ";
+    getline(cin, plateNumber);
+    Node* vehicleNode = parkingLot.searchByPlateNumber(plateNumber);
+    if (vehicleNode == nullptr) {
+        cout << "[INFO] Vehicle not found in the parking lot.\n";
+        return;
+    }
 
-        time_t currentTime = time(0);
-        double hoursParked = difftime(currentTime, vehicleNode->entryTime) / 3600.0;
-        double cost = hoursParked * vehicleNode->feePerHour;
+    time_t currentTime = time(0);
+    double hoursParked = difftime(currentTime, vehicleNode->entryTime) / 3600.0;
+    double cost = hoursParked * vehicleNode->feePerHour;
 
-        parkingLot.removeByPlateNumber(plateNumber);
-        spaces[vehicleNode->vehicleType]++;
+    string vehicleType = vehicleNode->vehicleType; // Save vehicleType before node is deleted
 
-        writeSpacesToCSV();
+    parkingLot.removeByPlateNumber(plateNumber);
+    spaces[vehicleType]++;
 
-        cout << "[INFO] " << vehicleNode->vehicleType << " " << plateNumber << " removed successfully.\n";
-        cout << "[INFO] Vehicle has been parked for " << hoursParked << " hours.\n";
-        cout << "[INFO] Total cost is $" << cost << "\n";
+    writeSpacesToCSV();
 
-        delete vehicleNode;
+    cout << "[INFO] " << vehicleType << " " << plateNumber << " removed successfully.\n";
+    cout << "[INFO] Vehicle has been parked for " << hoursParked << " hours.\n";
+    cout << "[INFO] Total cost is $" << cost << "\n";
 
-        string tempFileName = "temp.csv";
-        ifstream inputFile(csvFileName);
-        ofstream outputFile(tempFileName);
+    // delete vehicleNode; -> This line should be removed because node is already deleted in removeByPlateNumber
 
-        if(!inputFile.is_open() || !outputFile.is_open()) {
-            cerr << "[ERROR] Failed to open the CSV file.\n";
-            return;
-        }
+    string tempFileName = "temp.csv";
+    ifstream inputFile(csvFileName);
+    ofstream outputFile(tempFileName);
 
-        string line;
-        while(getline(inputFile, line)) {
-            if(line.find(plateNumber) == string::npos) {
-                outputFile << line << "\n";
-            }
-        }
+    if(!inputFile.is_open() || !outputFile.is_open()) {
+        cerr << "[ERROR] Failed to open the CSV file.\n";
+        return;
+    }
 
-        inputFile.close();
-        outputFile.close();
-
-        // Handle possible file operation errors
-        if(remove(csvFileName.c_str()) != 0) {
-            perror("[ERROR] Error deleting original CSV file");
-            return;
-        }
-        if(rename(tempFileName.c_str(), csvFileName.c_str()) != 0) {
-            perror("[ERROR] Error renaming temporary CSV file");
+    string line;
+    while(getline(inputFile, line)) {
+        if(line.find(plateNumber) == string::npos) {
+            outputFile << line << "\n";
         }
     }
 
+    inputFile.close();
+    outputFile.close();
+
+    // Handle possible file operation errors
+    if(remove(csvFileName.c_str()) != 0) {
+        perror("[ERROR] Error deleting original CSV file");
+        return;
+    }
+    if(rename(tempFileName.c_str(), csvFileName.c_str()) != 0) {
+        perror("[ERROR] Error renaming temporary CSV file");
+    }
+}
 
 };
+
+void pressAnyKeyToContinue() {
+    cout << "\nPress ENTER to continue...\n";
+    cin.get();
+    system("CLS");
+}
+
 
 int main() {
     ParkingLot parkingLot("parkingLot.csv");
@@ -300,14 +310,17 @@ int main() {
             case 1:
                 system("CLS");
                 parkingLot.addVehicle();
+                pressAnyKeyToContinue();
                 break;
             case 2:
                 system("CLS");
                 parkingLot.checkVehicle();
+                pressAnyKeyToContinue();
                 break;
             case 3:
                 system("CLS");
                 parkingLot.removeVehicle();
+                pressAnyKeyToContinue();
                 break;
             case 4:
                 cout << "Exiting...\n";
