@@ -5,6 +5,7 @@
 #include <map>
 #include <algorithm>
 #include <ctime>
+#include <limits>
 
 using namespace std;
 
@@ -84,6 +85,7 @@ private:
     LinkedList parkingLot;
     map<string, int> spaces = { {"car", 50}, {"truck", 30}, {"motor", 20} };
     map<string, double> fees = { {"car", 50.0}, {"truck", 100.0}, {"motor", 30.0} };
+    map<string, int> totalSpace = { {"car", 50}, {"truck", 30}, {"motor", 20} };
     string csvFileName;
 
     void readDataFromCSV() {
@@ -220,6 +222,27 @@ public:
         cout << "[INFO] Total cost is $" << cost << "\n";
     }
 
+    void printParkingLot() {
+        cout << "\n[PARKING LOT]\n";
+
+        for(const auto& space : spaces) {
+            string vehicleType = space.first;
+            int availableSpaces = space.second;
+            int occupiedSpaces = totalSpace[vehicleType] - availableSpaces;
+
+            cout << vehicleType << " Spaces:\n";
+            for(int i = 0; i < occupiedSpaces; ++i) {
+                cout << "[X]\t ";
+            }
+            
+            for(int i = 0; i < availableSpaces; ++i) {
+                cout << "[ ]\t ";
+            }
+            cout << "\n";
+        }
+        cout << "\n";
+    }
+
 void removeVehicle() {
     string plateNumber;
     cout << "Enter the plate number of the vehicle: ";
@@ -284,8 +307,8 @@ void pressAnyKeyToContinue() {
     system("CLS");
 }
 
-
 int main() {
+    system("cls");
     ParkingLot parkingLot("parkingLot.csv");
 
     int option;
@@ -309,6 +332,7 @@ int main() {
         switch (option) {
             case 1:
                 system("CLS");
+                parkingLot.printParkingLot();
                 parkingLot.addVehicle();
                 pressAnyKeyToContinue();
                 break;
@@ -331,8 +355,3 @@ int main() {
     }
     return 0;
 }
-
-
-
-
-
