@@ -6,8 +6,11 @@
 #include <algorithm>
 #include <ctime>
 #include <limits>
+#include <cmath>
 
 using namespace std;
+
+
 
 class Node {
 public:
@@ -215,11 +218,12 @@ public:
         }
 
         time_t currentTime = time(0);
-        double hoursParked = difftime(currentTime, vehicleNode->entryTime) / 3600.0;
+        double hoursParked = ceil(difftime(currentTime, vehicleNode->entryTime) / 3600.0);
+
         double cost = hoursParked * vehicleNode->feePerHour;
 
-        cout << "[INFO] Vehicle has been parked for " << hoursParked << " hours.\n";
-        cout << "[INFO] Total cost is $" << cost << "\n";
+        cout << "Parking time (hour): " << hoursParked << "\n";
+        cout << "Total cost: PHP" << cost << "\n";
     }
 
     void printParkingLot() {
@@ -234,7 +238,7 @@ public:
             for(int i = 0; i < occupiedSpaces; ++i) {
                 cout << "[X]\t ";
             }
-            
+
             for(int i = 0; i < availableSpaces; ++i) {
                 cout << "[ ]\t ";
             }
@@ -266,7 +270,8 @@ void removeVehicle() {
 
     cout << "[INFO] " << vehicleType << " " << plateNumber << " removed successfully.\n";
     cout << "[INFO] Vehicle has been parked for " << hoursParked << " hours.\n";
-    cout << "[INFO] Total cost is $" << cost << "\n";
+    cout << "[INFO] Total cost is PHP " << cost << "\n";
+
 
     // delete vehicleNode; -> This line should be removed because node is already deleted in removeByPlateNumber
 
@@ -313,7 +318,15 @@ int main() {
 
     int option;
     while (true) {
-        cout << "\n*** Parking Lot Management System ***\n";
+ cout << R"(
+______          _             _ _ _
+| ___ \        | |           | (_) |
+| |_/ /_ _ _ __| | ____ _  __| |_| |_ ___
+|  __/ _` | '__| |/ / _` |/ _` | | __/ _ \
+| | | (_| | |  |   < (_| | (_| | | || (_) |
+\_|  \__,_|_|  |_|\_\__,_|\__,_|_|\__\___/
+
+                                           )" << endl;
         cout << "1. Add vehicle\n";
         cout << "2. Check vehicle\n";
         cout << "3. Remove vehicle\n";
