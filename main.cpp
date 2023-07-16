@@ -7,6 +7,7 @@
 #include <ctime>
 #include <limits>
 #include <cmath>
+#include <windows.h>
 
 using namespace std;
 
@@ -156,6 +157,19 @@ public:
         readSpacesFromCSV();
     }
 
+
+    void displayHeader() {
+ cout << R"(
+______          _             _ _ _
+| ___ \        | |           | (_) |
+| |_/ /_ _ _ __| | ____ _  __| |_| |_ ___
+|  __/ _` | '__| |/ / _` |/ _` | | __/ _ \
+| | | (_| | |  |   < (_| | (_| | | || (_) |
+\_|  \__,_|_|  |_|\_\__,_|\__,_|_|\__\___/
+
+                                           )" << endl;
+    }
+
     void addVehicle() {
         string plateNumber;
         string vehicleType;
@@ -209,7 +223,7 @@ public:
 
     void checkVehicle() {
         string plateNumber;
-        cout << "Enter the plate number of the vehicle: ";
+        cout << "Enter the plate number of the vehicle: " << endl;
         getline(cin, plateNumber);
         Node* vehicleNode = parkingLot.searchByPlateNumber(plateNumber);
         if (vehicleNode == nullptr) {
@@ -227,19 +241,29 @@ public:
     }
 
     void printParkingLot() {
-        cout << "\n[PARKING LOT]\n";
+
+        // Color of the console
+        HANDLE console_color;
+        console_color = GetStdHandle(STD_OUTPUT_HANDLE);
+        // P is color code of the
+
+
+        // corresponding color
+
 
         for(const auto& space : spaces) {
             string vehicleType = space.first;
             int availableSpaces = space.second;
             int occupiedSpaces = totalSpace[vehicleType] - availableSpaces;
 
-            cout << vehicleType << " Spaces:\n";
+            cout << vehicleType << " Spaces:\n" <<endl;
             for(int i = 0; i < occupiedSpaces; ++i) {
+                SetConsoleTextAttribute(console_color, 2);
                 cout << "[X]\t ";
             }
 
             for(int i = 0; i < availableSpaces; ++i) {
+                SetConsoleTextAttribute(console_color, 3);
                 cout << "[ ]\t ";
             }
             cout << "\n";
@@ -249,7 +273,7 @@ public:
 
 void removeVehicle() {
     string plateNumber;
-    cout << "Enter the plate number of the vehicle: ";
+    cout << "Enter the plate number of the vehicle: " << endl;
     getline(cin, plateNumber);
     Node* vehicleNode = parkingLot.searchByPlateNumber(plateNumber);
     if (vehicleNode == nullptr) {
@@ -318,15 +342,7 @@ int main() {
 
     int option;
     while (true) {
- cout << R"(
-______          _             _ _ _
-| ___ \        | |           | (_) |
-| |_/ /_ _ _ __| | ____ _  __| |_| |_ ___
-|  __/ _` | '__| |/ / _` |/ _` | | __/ _ \
-| | | (_| | |  |   < (_| | (_| | | || (_) |
-\_|  \__,_|_|  |_|\_\__,_|\__,_|_|\__\___/
-
-                                           )" << endl;
+        parkingLot.displayHeader();
         cout << "1. Add vehicle\n";
         cout << "2. Check vehicle\n";
         cout << "3. Remove vehicle\n";
@@ -345,17 +361,20 @@ ______          _             _ _ _
         switch (option) {
             case 1:
                 system("CLS");
+                parkingLot.displayHeader();
                 parkingLot.printParkingLot();
                 parkingLot.addVehicle();
                 pressAnyKeyToContinue();
                 break;
             case 2:
                 system("CLS");
+                parkingLot.displayHeader();
                 parkingLot.checkVehicle();
                 pressAnyKeyToContinue();
                 break;
             case 3:
                 system("CLS");
+                parkingLot.displayHeader();
                 parkingLot.removeVehicle();
                 pressAnyKeyToContinue();
                 break;
