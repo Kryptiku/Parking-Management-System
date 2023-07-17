@@ -214,6 +214,15 @@ ______          _             _ _ _
         cout << "Enter plate number: ";
         getline(cin, plateNumber);
 
+        Node* vehicleNode = parkingLot.searchByPlateNumber(plateNumber);
+        if (vehicleNode != nullptr) {
+            HANDLE console_color;
+            console_color = GetStdHandle(STD_OUTPUT_HANDLE);
+            SetConsoleTextAttribute(console_color, 4);
+            cout << "[ERROR] Vehicle already exist.\n";
+            return;
+        }
+
         parkingLot.insertAtTail(new Node(plateNumber, vehicleType, feePerHour));
         spaces[vehicleType]--;
 
@@ -384,7 +393,7 @@ int main() {
         console_color = GetStdHandle(STD_OUTPUT_HANDLE);
 
         parkingLot.displayHeader();
-        cout << SetConsoleTextAttribute(console_color, 7) << " Add vehicle\n";
+        cout << SetConsoleTextAttribute(console_color, 7) << ". Add vehicle\n";
         cout << "2. Check vehicle\n";
         cout << "3. Remove vehicle\n";
         cout << "4. Exit\n\n";
