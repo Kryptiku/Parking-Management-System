@@ -159,6 +159,11 @@ public:
 
 
     void displayHeader() {
+        // Text Color
+        HANDLE console_color;
+        console_color = GetStdHandle(STD_OUTPUT_HANDLE);
+        SetConsoleTextAttribute(console_color, 3);
+
  cout << R"(
 ______          _             _ _ _
 | ___ \        | |           | (_) |
@@ -174,24 +179,31 @@ ______          _             _ _ _
         string plateNumber;
         string vehicleType;
         double feePerHour;
+        // Text Color
+        HANDLE console_color;
+        console_color = GetStdHandle(STD_OUTPUT_HANDLE);
+        SetConsoleTextAttribute(console_color, 7);
 
         cout << "Available parking spaces:\n";
         for (auto const& space : spaces)
             cout << space.first << ": " << space.second << "\n";
 
         while (true) {
+            SetConsoleTextAttribute(console_color, 7);
             cout << endl <<"[Motor = 30php/hr ]\n[Car = 50php/hr]\n[Truck = 100php/hr]\n" << endl << "Enter vehicle type: ";
             getline(cin, vehicleType);
 
             transform(vehicleType.begin(), vehicleType.end(), vehicleType.begin(), ::tolower);
 
             if (spaces.find(vehicleType) == spaces.end()) {
+                SetConsoleTextAttribute(console_color, 4);
                 cout << "\n[ERROR] Invalid vehicle type. Please try again.\n";
                 continue;
             }
 
             if (spaces[vehicleType] <= 0) {
-                cout << "\n[INFO] No available space for " << vehicleType << ". Please choose another vehicle type.\n";
+                SetConsoleTextAttribute(console_color, 4);
+                cout << "\n[FAILED] No available space for " << vehicleType << ". Please choose another vehicle type.\n";
                 continue;
             }
             break;
@@ -207,8 +219,11 @@ ______          _             _ _ _
 
         writeSpacesToCSV();
 
-        cout << "\n[INFO] " << vehicleType << " " << plateNumber << " added successfully.\n";
+        SetConsoleTextAttribute(console_color, 2);
+        cout << "\n[SUCCESS] " << vehicleType << " " << plateNumber << " added successfully.\n";
+        SetConsoleTextAttribute(console_color, 6);
         cout << "\n[INFO] The fee per hour is PHP" << feePerHour << "\n";
+        SetConsoleTextAttribute(console_color, 7);
 
         ofstream outputFile(csvFileName, ios::app);
         if(outputFile.is_open()) {
@@ -216,18 +231,26 @@ ______          _             _ _ _
             outputFile.close();
         }
         else {
+            SetConsoleTextAttribute(console_color, 4);
             cerr << "[ERROR] Failed to open the CSV file for writing. \n";
             return;
         }
     }
 
+    // Check details of a vehicle
     void checkVehicle() {
         string plateNumber;
+        // Text Color
+        HANDLE console_color;
+        console_color = GetStdHandle(STD_OUTPUT_HANDLE);
+        
+        SetConsoleTextAttribute(console_color, 7);
         cout << "Enter the plate number of the vehicle: " << endl;
         getline(cin, plateNumber);
         Node* vehicleNode = parkingLot.searchByPlateNumber(plateNumber);
         if (vehicleNode == nullptr) {
-            cout << "[INFO] Vehicle not found in the parking lot.\n";
+            SetConsoleTextAttribute(console_color, 4);
+            cout << "[FAILED] Vehicle not found in the parking lot.\n";
             return;
         }
 
@@ -236,27 +259,25 @@ ______          _             _ _ _
 
         double cost = hoursParked * vehicleNode->feePerHour;
 
+        SetConsoleTextAttribute(console_color, 7);
         cout << "Parking time (hour): " << hoursParked << "\n";
         cout << "Total cost: PHP" << cost << "\n";
     }
 
+    // Parking Lot UI
     void printParkingLot() {
-
-        // Color of the console
+        // Text Color
         HANDLE console_color;
         console_color = GetStdHandle(STD_OUTPUT_HANDLE);
-        // P is color code of the
-
-
-        // corresponding color
-
+        SetConsoleTextAttribute(console_color, 2);
 
         for(const auto& space : spaces) {
             string vehicleType = space.first;
             int availableSpaces = space.second;
             int occupiedSpaces = totalSpace[vehicleType] - availableSpaces;
-
-            cout << vehicleType << " Spaces:\n" <<endl;
+            
+            SetConsoleTextAttribute(console_color, 7);
+            cout << endl << vehicleType << " Spaces:\n";
             for(int i = 0; i < occupiedSpaces; ++i) {
                 SetConsoleTextAttribute(console_color, 2);
                 cout << "[X]\t ";
@@ -272,12 +293,18 @@ ______          _             _ _ _
     }
 
 void removeVehicle() {
+    // Color of the console
+    HANDLE console_color;
+    console_color = GetStdHandle(STD_OUTPUT_HANDLE);
+
     string plateNumber;
+    SetConsoleTextAttribute(console_color, 7);
     cout << "Enter the plate number of the vehicle: " << endl;
     getline(cin, plateNumber);
     Node* vehicleNode = parkingLot.searchByPlateNumber(plateNumber);
     if (vehicleNode == nullptr) {
-        cout << "[INFO] Vehicle not found in the parking lot.\n";
+        SetConsoleTextAttribute(console_color, 4);
+        cout << "[FAILED] Vehicle not found in the parking lot.\n";
         return;
     }
 
@@ -292,7 +319,9 @@ void removeVehicle() {
 
     writeSpacesToCSV();
 
-    cout << "[INFO] " << vehicleType << " " << plateNumber << " removed successfully.\n";
+    SetConsoleTextAttribute(console_color, 2);
+    cout << "[SUCCESS] " << vehicleType << " " << plateNumber << " removed successfully.\n";
+    SetConsoleTextAttribute(console_color, 6); 
     cout << "[INFO] Vehicle has been parked for " << hoursParked << " hours.\n";
     cout << "[INFO] Total cost is PHP " << cost << "\n";
 
@@ -304,6 +333,7 @@ void removeVehicle() {
     ofstream outputFile(tempFileName);
 
     if(!inputFile.is_open() || !outputFile.is_open()) {
+        SetConsoleTextAttribute(console_color, 4);
         cerr << "[ERROR] Failed to open the CSV file.\n";
         return;
     }
@@ -320,10 +350,12 @@ void removeVehicle() {
 
     // Handle possible file operation errors
     if(remove(csvFileName.c_str()) != 0) {
+        SetConsoleTextAttribute(console_color, 4);
         perror("[ERROR] Error deleting original CSV file");
         return;
     }
     if(rename(tempFileName.c_str(), csvFileName.c_str()) != 0) {
+        SetConsoleTextAttribute(console_color, 4);
         perror("[ERROR] Error renaming temporary CSV file");
     }
 }
@@ -331,6 +363,11 @@ void removeVehicle() {
 };
 
 void pressAnyKeyToContinue() {
+    // Color of the console
+    HANDLE console_color;
+    console_color = GetStdHandle(STD_OUTPUT_HANDLE);
+
+    SetConsoleTextAttribute(console_color, 7);
     cout << "\nPress ENTER to continue...\n";
     cin.get();
     system("CLS");
@@ -342,11 +379,15 @@ int main() {
 
     int option;
     while (true) {
+        // Text color
+        HANDLE console_color;
+        console_color = GetStdHandle(STD_OUTPUT_HANDLE);
+
         parkingLot.displayHeader();
-        cout << "1. Add vehicle\n";
+        cout << SetConsoleTextAttribute(console_color, 7) << " Add vehicle\n";
         cout << "2. Check vehicle\n";
         cout << "3. Remove vehicle\n";
-        cout << "4. Exit\n";
+        cout << "4. Exit\n\n";
         cout << "Please enter your option: ";
 
         if(!(cin >> option)) {
@@ -354,7 +395,7 @@ int main() {
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
             cout << "[ERROR] Invalid option. Please enter a number.\n";
             continue;
-        }
+        } 
 
         cin.ignore();
 
@@ -379,7 +420,7 @@ int main() {
                 pressAnyKeyToContinue();
                 break;
             case 4:
-                cout << "Exiting...\n";
+                cout << "Thank You...\n";
                 return 0;
             default:
                 cout << "[ERROR] Invalid option. Please try again.\n";
